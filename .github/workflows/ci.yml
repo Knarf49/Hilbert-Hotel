@@ -3,6 +3,7 @@ name: CI - Automated Tests & PR Verification
 on:
   push:
     branches:
+      - main
       - 'task-*/**'
   pull_request:
     branches:
