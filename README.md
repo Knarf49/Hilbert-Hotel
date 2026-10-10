@@ -42,9 +42,29 @@ uv venv
 uv pip install -r requirements.txt
 ```
 
-> 🚀 **ความสะดวกของ `uv`:** ไม่จำเป็นต้องสั่ง activate environment ก็ได้! สามารถสั่ง `uv run` นำหน้าคำสั่งใดๆ ได้ทันที เช่น `uv run pytest`
+### ขั้นที่ 3: การเปิดใช้งาน (Activate Virtual Environment)
+หลังจากสั่ง `uv venv` แล้ว สามารถเลือกเปิดใช้งาน (Activate) Environment ได้ตามระบบปฏิบัติการ:
+
+```bash
+# สำหรับ Windows (PowerShell):
+.venv\Scripts\activate
+
+# สำหรับ Windows (Command Prompt):
+.venv\Scripts\activate.bat
+
+# สำหรับ macOS / Linux:
+source .venv/bin/activate
+```
+*เมื่อ Activate แล้ว จะมีคำว่า `(.venv)` ปรากฏด้านหน้าบรรทัดคำสั่ง และสามารถพิมพ์ `pytest` หรือ `python` ได้โดยตรง*
+
+> 💡 **การออกจาก Environment (Deactivate):**
+> ```bash
+> deactivate
+> ```
 > 
-> 💡 **สำหรับผู้ใช้ VS Code:** เมื่อสั่ง `uv venv` แล้วเปิด VS Code ตัวโปรแกรมจะตรวจพบ `.venv` และตั้งค่า Pytest Test Explorer ให้อัตโนมัติจาก `.vscode/settings.json`
+> 🚀 **หรือจะไม่ Activate ก็ได้! (ความสะดวกของ `uv`):** สามารถพิมพ์ `uv run` นำหน้าคำสั่งใดๆ ได้ทันทีโดยไม่ต้องสั่ง activate เช่น `uv run pytest`
+> 
+> 🛠️ **สำหรับผู้ใช้ VS Code:** เมื่อสั่ง `uv venv` แล้วเปิด VS Code ตัวโปรแกรมจะตรวจพบ `.venv` และตั้งค่า Pytest Test Explorer ให้อัตโนมัติจาก `.vscode/settings.json`
 
 <details>
 <summary>👉 คลิกที่นี่หากต้องการใช้วิธี python venv ปกติ (แบบดั้งเดิม)</summary>
