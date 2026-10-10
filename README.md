@@ -20,31 +20,47 @@
 
 ---
 
-## ⚙️ การตั้งค่าสภาพแวดล้อม (Environment Setup)
+## ⚙️ การตั้งค่าสภาพแวดล้อมด้วย `uv` (Recommended)
 
-เพื่อให้ทุกคนในทีม (รวมถึง CI/CD บน GitHub) ใช้งานแพ็กเกจเวอร์ชันเดียวกัน 100%:
+โปรเจกต์นี้แนะนำให้จัดการสภาพแวดล้อมด้วย [**`uv`**](https://docs.astral.sh/uv/) ซึ่งเป็น Python package & project manager ที่ทำงานเร็วมาก และสามารถดึง Python เวอร์ชันตรงตาม [`.python-version`](.python-version) ให้อัตโนมัติ:
 
-### ขั้นที่ 1: สร้างและเปิดใช้งาน Virtual Environment
+### ขั้นที่ 1: ติดตั้ง `uv` (หากยังไม่มีในเครื่อง)
+```bash
+# สำหรับ Windows (PowerShell):
+powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+
+# สำหรับ macOS / Linux:
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
+
+### ขั้นที่ 2: สร้าง Environment และติดตั้ง Dependencies
+```bash
+# 1. สร้าง Virtual Environment (uv จะอ่าน .python-version ให้อัตโนมัติ)
+uv venv
+
+# 2. ติดตั้งแพ็กเกจให้ตรงกันทุกคน
+uv pip install -r requirements.txt
+```
+
+> 🚀 **ความสะดวกของ `uv`:** ไม่จำเป็นต้องสั่ง activate environment ก็ได้! สามารถสั่ง `uv run` นำหน้าคำสั่งใดๆ ได้ทันที เช่น `uv run pytest`
+> 
+> 💡 **สำหรับผู้ใช้ VS Code:** เมื่อสั่ง `uv venv` แล้วเปิด VS Code ตัวโปรแกรมจะตรวจพบ `.venv` และตั้งค่า Pytest Test Explorer ให้อัตโนมัติจาก `.vscode/settings.json`
+
+<details>
+<summary>👉 คลิกที่นี่หากต้องการใช้วิธี python venv ปกติ (แบบดั้งเดิม)</summary>
+
 ```bash
 # 1. สร้าง virtual environment
 python -m venv .venv
 
 # 2. เปิดใช้งาน (Activate)
-# สำหรับ Windows (PowerShell):
-.venv\Scripts\Activate.ps1
+# Windows (PowerShell): .venv\Scripts\Activate.ps1
+# macOS / Linux: source .venv/bin/activate
 
-# สำหรับ Windows (Command Prompt):
-.venv\Scripts\activate.bat
-
-# สำหรับ macOS / Linux:
-source .venv/bin/activate
-```
-
-### ขั้นที่ 2: ติดตั้ง Dependencies
-```bash
+# 3. ติดตั้งแพ็กเกจ
 pip install -r requirements.txt
 ```
-> 💡 **สำหรับผู้ใช้ VS Code:** โปรเจกต์นี้ตั้งค่า `.vscode/settings.json` ไว้แล้ว เมื่อสร้าง `.venv` เสร็จแล้วเปิด VS Code ตัวโปรแกรมจะเลือก Python Interpreter จาก `.venv` และแสดงแถบเมนูรัน **Test Explorer (Pytest)** ให้คลิกกดรันเทสต์ได้ทันที!
+</details>
 
 ---
 
@@ -55,17 +71,18 @@ pip install -r requirements.txt
 ### คำสั่งรันเทสต์เฉพาะ Task ของตนเอง:
 ```bash
 # สำหรับคนทำ Task 1
-pytest tests/test_task1_ring.py -v
+uv run pytest tests/test_task1_ring.py -v
 
 # สำหรับคนทำ Task 2
-pytest tests/test_task2_guest.py -v
+uv run pytest tests/test_task2_guest.py -v
 
 # สำหรับคนทำ Task 3
-pytest tests/test_task3_migration.py -v
+uv run pytest tests/test_task3_migration.py -v
 
 # สำหรับคนทำ Task 4
-pytest tests/test_task4_integration.py -v
+uv run pytest tests/test_task4_integration.py -v
 ```
+*(หมายเหตุ: หากใช้ venv แบบปกติและ activate แล้ว สามารถใช้คำสั่ง `pytest tests/...` แทน `uv run pytest` ได้เช่นกัน)*
 
 ### คำสั่งรันเทสต์ทั้งหมดในโปรเจกต์:
 ```bash
