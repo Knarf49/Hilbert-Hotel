@@ -1,0 +1,8 @@
+# Project Dependencies for Distributed Hilbert's Hotel
+# วิชา Object Oriented Data Structure (OODS) 1/2569
+
+# Data Plotting & Experiment Graphs (Task 4)
+matplotlib>=3.8.0
+
+# Testing & CI Verification
+pytest>=8.0.0

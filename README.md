@@ -20,14 +20,37 @@
 
 ---
 
+## ⚙️ การตั้งค่าสภาพแวดล้อม (Environment Setup)
+
+เพื่อให้ทุกคนในทีม (รวมถึง CI/CD บน GitHub) ใช้งานแพ็กเกจเวอร์ชันเดียวกัน 100%:
+
+### ขั้นที่ 1: สร้างและเปิดใช้งาน Virtual Environment
+```bash
+# 1. สร้าง virtual environment
+python -m venv .venv
+
+# 2. เปิดใช้งาน (Activate)
+# สำหรับ Windows (PowerShell):
+.venv\Scripts\Activate.ps1
+
+# สำหรับ Windows (Command Prompt):
+.venv\Scripts\activate.bat
+
+# สำหรับ macOS / Linux:
+source .venv/bin/activate
+```
+
+### ขั้นที่ 2: ติดตั้ง Dependencies
+```bash
+pip install -r requirements.txt
+```
+> 💡 **สำหรับผู้ใช้ VS Code:** โปรเจกต์นี้ตั้งค่า `.vscode/settings.json` ไว้แล้ว เมื่อสร้าง `.venv` เสร็จแล้วเปิด VS Code ตัวโปรแกรมจะเลือก Python Interpreter จาก `.venv` และแสดงแถบเมนูรัน **Test Explorer (Pytest)** ให้คลิกกดรันเทสต์ได้ทันที!
+
+---
+
 ## 🧪 1. กลไกการทดสอบโค้ดในเครื่อง (Local Testing)
 
 ก่อนจะส่งโค้ดขึ้น GitHub ทุกครั้ง ให้รันชุดทดสอบในเครื่องตัวเองเพื่อความมั่นใจและประหยัดเวลา:
-
-### ติดตั้งเครื่องมือทดสอบ (ครั้งแรก)
-```bash
-pip install pytest
-```
 
 ### คำสั่งรันเทสต์เฉพาะ Task ของตนเอง:
 ```bash
