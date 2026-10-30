@@ -1,0 +1,14 @@
+[project]
+name = "hilbert-hotel"
+version = "0.1.0"
+description = "Distributed Hilbert's Hotel using Consistent Hashing"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "matplotlib>=3.8.0",
+    "pytest>=8.0.0",
+    "questionary>=2.0.0",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
