@@ -3,6 +3,18 @@ import os
 from typing import Optional, Any
 import questionary
 
+from src.handlers.system import (
+    handle_init,
+    handle_search,
+    handle_list_rooms,
+    handle_load_balance,
+)
+from src.handlers.guest import handle_add_guests
+from src.handlers.building import (
+    handle_remove_guest,
+    handle_building_modification,
+)
+
 try:
     from src.hotel_system import HotelSystem
 except ImportError:
@@ -31,13 +43,13 @@ class HotelCLI:
 
     def run(self):
         menu = {
-            "1. Initialize System": self.handle_init,
-            "2. Add Guests (Single / Batch)": self.handle_add_guests,
-            "3. Remove Guest": self.handle_remove_guest,
-            "4. Add / Remove Building": self.handle_building_modification,
-            "5. Bidirectional Search": self.handle_search,
-            "6. List Occupied Rooms": self.handle_list_rooms,
-            "7. Load Balance Analysis": self.handle_load_balance,
+            "1. Initialize System": lambda: handle_init(self),
+            "2. Add Guests (Single / Batch)": lambda: handle_add_guests(self),
+            "3. Remove Guest": lambda: handle_remove_guest(self),
+            "4. Add / Remove Building": lambda: handle_building_modification(self),
+            "5. Bidirectional Search": lambda: handle_search(self),
+            "6. List Occupied Rooms": lambda: handle_list_rooms(self),
+            "7. Load Balance Analysis": lambda: handle_load_balance(self),
             "8. Run Performance Benchmarks": self.handle_benchmarks,
             "9. Compare with Hash Mod N": self.handle_compare_mod_n,
             "10. Export Data to CSV": self.handle_csv_export,
@@ -57,168 +69,6 @@ class HotelCLI:
             action = menu.get(choice)
             if action:
                 action()
-
-    def handle_init(self):
-        if HotelSystem is None:
-            print("Error: HotelSystem module not available.")
-            return
-
-        n = questionary.text("Number of buildings (N >= 1):", default="10").ask()
-        v = questionary.text("Virtual nodes per building (V >= 1):", default="32").ask()
-        channels = questionary.text("Number of channels (c):", default="10").ask()
-        guests = questionary.text("Guests per channel:", default="100").ask()
-
-        try:
-            n_val, v_val, c_val, g_val = int(n), int(v), int(channels), int(guests)
-            if n_val < 1 or v_val < 1 or c_val < 1 or g_val < 0:
-                print("Values must be positive integers.")
-                return
-
-            self.system = HotelSystem(v_nodes=v_val)
-            for i in range(n_val):
-                self.system.add_building(f"Node_{i}")
-
-            for c in range(1, c_val + 1):
-                for s in range(1, g_val + 1):
-                    if hasattr(self.system, "add_single_guest"):
-                        self.system.add_single_guest(c, s)
-                    elif hasattr(self.system, "add_guest"):
-                        self.system.add_guest(c, s)
-
-            print(f"System initialized with {n_val} buildings and {c_val * g_val} guests.")
-        except (ValueError, TypeError):
-            print("Invalid input numbers.")
-
-    def handle_add_guests(self):
-        if not self.system:
-            print("Please initialize system first.")
-            return
-
-        mode = questionary.select("Add mode:", choices=["Single Guest", "Batch Guests", "Back"]).ask()
-        if mode == "Single Guest":
-            c = questionary.text("Channel ID:").ask()
-            s = questionary.text("Sequence ID:").ask()
-            try:
-                fn = getattr(self.system, "add_single_guest", getattr(self.system, "add_guest", None))
-                ok = fn(int(c), int(s)) if fn else False
-                print("Guest added." if ok else "Failed. Duplicate or invalid.")
-            except (ValueError, TypeError):
-                print("Invalid input.")
-        elif mode == "Batch Guests":
-            c = questionary.text("Channel ID:").ask()
-            s_start = questionary.text("Start Sequence ID:").ask()
-            count = questionary.text("Count:").ask()
-            try:
-                fn = getattr(self.system, "add_guest_batch", None)
-                ok = fn(int(c), int(s_start), int(count)) if fn else False
-                print("Batch added." if ok else "Batch rejected (collision detected).")
-            except (ValueError, TypeError):
-                print("Invalid input.")
-
-    def handle_remove_guest(self):
-        if not self.system:
-            print("Please initialize system first.")
-            return
-
-        c = questionary.text("Channel ID:").ask()
-        s = questionary.text("Sequence ID:").ask()
-        try:
-            fn = getattr(self.system, "remove_guest", None)
-            ok = fn(int(c), int(s)) if fn else False
-            print("Guest removed." if ok else "Guest not found.")
-        except (ValueError, TypeError):
-            print("Invalid input.")
-
-    def handle_building_modification(self):
-        if not self.system:
-            print("Please initialize system first.")
-            return
-
-        action = questionary.select("Action:", choices=["Add Building", "Remove Building", "Back"]).ask()
-        if action == "Back" or not action:
-            return
-
-        b_id = questionary.text("Building Node ID:").ask()
-        if not b_id:
-            return
-
-        if action == "Add Building":
-            ok, migs, rate = self.system.add_building(b_id)
-            if ok:
-                self.migration_history.extend(migs)
-                print(f"Added {b_id}. Relocated: {len(migs)}, Rate: {rate:.4f}")
-            else:
-                print(f"Failed to add {b_id} (already exists).")
-        else:
-            ok, migs, rate = self.system.remove_building(b_id)
-            if ok:
-                self.migration_history.extend(migs)
-                print(f"Removed {b_id}. Relocated: {len(migs)}, Rate: {rate:.4f}")
-            else:
-                print(f"Failed to remove {b_id} (not found or only 1 building left).")
-
-    def handle_search(self):
-        if not self.system:
-            print("Please initialize system first.")
-            return
-
-        mode = questionary.select("Search by:", choices=["Guest ID (c, s)", "Room (node_id, room_no)", "Back"]).ask()
-        if mode == "Guest ID (c, s)":
-            c = questionary.text("Channel ID:").ask()
-            s = questionary.text("Sequence ID:").ask()
-            try:
-                fn = getattr(self.system, "search_by_guest", None)
-                if not fn and hasattr(self.system, "index_manager"):
-                    fn = self.system.index_manager.search_by_guest
-                res = fn(int(c), int(s)) if fn else None
-                print(f"Location: Building {res[0]}, Room {res[1]}" if res else "Not Found.")
-            except (ValueError, TypeError):
-                print("Invalid input.")
-        elif mode == "Room (node_id, room_no)":
-            node_id = questionary.text("Building Node ID:").ask()
-            room_no = questionary.text("Room Number:").ask()
-            try:
-                fn = getattr(self.system, "search_by_room", None)
-                if not fn and hasattr(self.system, "index_manager"):
-                    fn = self.system.index_manager.search_by_room
-                res = fn(node_id, int(room_no)) if fn else None
-                print(f"Guest: Channel {res[0]}, Sequence {res[1]}" if res else "Not Found.")
-            except (ValueError, TypeError):
-                print("Invalid input.")
-
-    def handle_list_rooms(self):
-        if not self.system:
-            print("Please initialize system first.")
-            return
-
-        fn = getattr(self.system, "list_occupied_rooms", None)
-        if fn:
-            rooms = fn()
-            print(f"Occupied Rooms ({len(rooms)} total):")
-            for r in rooms[:30]:
-                print(r)
-            if len(rooms) > 30:
-                print(f"... and {len(rooms) - 30} more.")
-        else:
-            print("Feature not implemented in core system.")
-
-    def handle_load_balance(self):
-        if not self.system:
-            print("Please initialize system first.")
-            return
-
-        fn = getattr(self.system, "get_load_balance_stats", None)
-        if fn:
-            stats = fn()
-            print("=" * 30)
-            print(f"Max: {stats.get('max')}")
-            print(f"Min: {stats.get('min')}")
-            print(f"Mean: {stats.get('mean'):.2f}")
-            print(f"Std: {stats.get('std'):.4f}")
-            print(f"CV: {stats.get('cv')}")
-            print("=" * 30)
-        else:
-            print("Feature not implemented.")
 
     def handle_benchmarks(self):
         if not ExperimentRunner:
