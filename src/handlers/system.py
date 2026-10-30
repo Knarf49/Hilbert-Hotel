@@ -1,9 +1,25 @@
+import os
 import questionary
 
 try:
     from src.hotel_system import HotelSystem
 except ImportError:
     HotelSystem = None
+
+try:
+    from src.mod_n_system import ModNHotelSystem
+except ImportError:
+    ModNHotelSystem = None
+
+try:
+    from src.experiments import ExperimentRunner
+except ImportError:
+    ExperimentRunner = None
+
+try:
+    from src.export import CSVExporter
+except ImportError:
+    CSVExporter = None
 
 
 def handle_init(cli):
@@ -38,53 +54,6 @@ def handle_init(cli):
         print("Invalid input numbers.")
 
 
-def handle_search(cli):
-    if not cli.system:
-        print("Please initialize system first.")
-        return
-
-    mode = questionary.select("Search by:", choices=["Guest ID (c, s)", "Room (node_id, room_no)", "Back"]).ask()
-    if mode == "Guest ID (c, s)":
-        c = questionary.text("Channel ID:").ask()
-        s = questionary.text("Sequence ID:").ask()
-        try:
-            fn = getattr(cli.system, "search_by_guest", None)
-            if not fn and hasattr(cli.system, "index_manager"):
-                fn = cli.system.index_manager.search_by_guest
-            res = fn(int(c), int(s)) if fn else None
-            print(f"Location: Building {res[0]}, Room {res[1]}" if res else "Not Found.")
-        except (ValueError, TypeError):
-            print("Invalid input.")
-    elif mode == "Room (node_id, room_no)":
-        node_id = questionary.text("Building Node ID:").ask()
-        room_no = questionary.text("Room Number:").ask()
-        try:
-            fn = getattr(cli.system, "search_by_room", None)
-            if not fn and hasattr(cli.system, "index_manager"):
-                fn = cli.system.index_manager.search_by_room
-            res = fn(node_id, int(room_no)) if fn else None
-            print(f"Guest: Channel {res[0]}, Sequence {res[1]}" if res else "Not Found.")
-        except (ValueError, TypeError):
-            print("Invalid input.")
-
-
-def handle_list_rooms(cli):
-    if not cli.system:
-        print("Please initialize system first.")
-        return
-
-    fn = getattr(cli.system, "list_occupied_rooms", None)
-    if fn:
-        rooms = fn()
-        print(f"Occupied Rooms ({len(rooms)} total):")
-        for r in rooms[:30]:
-            print(r)
-        if len(rooms) > 30:
-            print(f"... and {len(rooms) - 30} more.")
-    else:
-        print("Feature not implemented in core system.")
-
-
 def handle_load_balance(cli):
     if not cli.system:
         print("Please initialize system first.")
@@ -102,3 +71,76 @@ def handle_load_balance(cli):
         print("=" * 30)
     else:
         print("Feature not implemented.")
+
+
+def handle_benchmarks(cli):
+    if not ExperimentRunner:
+        print("ExperimentRunner not available.")
+        return
+
+    exp = questionary.select("Choose Benchmark:", choices=["Exp A: Data Size", "Exp B: Mod N Comparison", "Exp C: Virtual Nodes", "Back"]).ask()
+    runner = ExperimentRunner()
+    if exp == "Exp A: Data Size":
+        print(runner.run_experiment_a([1000, 5000]))
+    elif exp == "Exp B: Mod N Comparison":
+        print(runner.run_experiment_b([5, 10]))
+    elif exp == "Exp C: Virtual Nodes":
+        print(runner.run_experiment_c([1, 8]))
+
+
+def handle_compare_mod_n(cli):
+    if not ModNHotelSystem or not HotelSystem or not ExperimentRunner:
+        print("Required modules not ready.")
+        return
+
+    n_str = questionary.text("Building count (N):", default="10").ask()
+    k_str = questionary.text("Guest count (K):", default="1000").ask()
+    try:
+        n, k = int(n_str), int(k_str)
+        runner = ExperimentRunner()
+        guest_list = runner.generate_guest_batch(k)
+        ch_sys = HotelSystem(v_nodes=32)
+        mod_sys = ModNHotelSystem()
+
+        for i in range(n):
+            ch_sys.add_building(f"Node_{i}")
+            mod_sys.add_building(f"Node_{i}")
+
+        for c, s in guest_list:
+            fn = getattr(ch_sys, "add_single_guest", getattr(ch_sys, "add_guest", None))
+            if fn:
+                fn(c, s)
+
+        _, _, ch_rate = ch_sys.add_building("New_Node")
+        b_mod = [mod_sys.get_node(f"guest:{c}:{s}") for c, s in guest_list]
+        mod_sys.add_building("New_Node")
+        a_mod = [mod_sys.get_node(f"guest:{c}:{s}") for c, s in guest_list]
+        mod_rate = sum(1 for x, y in zip(b_mod, a_mod) if x != y) / k if k > 0 else 0.0
+
+        print(f"Consistent Hashing Rate: {ch_rate:.4f}")
+        print(f"Hash Mod N Rate:         {mod_rate:.4f}")
+    except (ValueError, TypeError):
+        print("Invalid input.")
+
+
+def handle_csv_export(cli):
+    if not CSVExporter:
+        print("CSVExporter not available.")
+        return
+
+    os.makedirs("output", exist_ok=True)
+    if cli.migration_history:
+        mig_data = [
+            {
+                "channel_id": getattr(m, "channel_id", ""),
+                "sequence_id": getattr(m, "sequence_id", ""),
+                "old_node": getattr(m, "old_node", ""),
+                "new_node": getattr(m, "new_node", ""),
+                "room_no": getattr(m, "room_no", ""),
+            }
+            for m in cli.migration_history
+        ]
+        CSVExporter.export_migrations("output/migrations.csv", mig_data)
+        print("Exported to output/migrations.csv")
+    else:
+        print("No migrations recorded yet.")

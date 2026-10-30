@@ -26,3 +26,18 @@ def handle_add_guests(cli):
             print("Batch added." if ok else "Batch rejected (collision detected).")
         except (ValueError, TypeError):
             print("Invalid input.")
+
+
+def handle_remove_guest(cli):
+    if not cli.system:
+        print("Please initialize system first.")
+        return
+
+    c = questionary.text("Channel ID:").ask()
+    s = questionary.text("Sequence ID:").ask()
+    try:
+        fn = getattr(cli.system, "remove_guest", None)
+        ok = fn(int(c), int(s)) if fn else False
+        print("Guest removed." if ok else "Guest not found.")
+    except (ValueError, TypeError):
+        print("Invalid input.")
