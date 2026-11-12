@@ -6,3 +6,6 @@ matplotlib>=3.8.0
 
 # Testing & CI Verification
 pytest>=8.0.0
+
+# Interactive CLI
+questionary>=2.0.0
