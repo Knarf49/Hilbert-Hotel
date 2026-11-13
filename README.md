@@ -9,12 +9,12 @@
 
 โปรเจกต์นี้แบ่งงานแบบ **1 คนต่อ 1 Task** โดยมี Branch แยกอิสระสำหรับแต่ละคน ดังนี้:
 
-| Task | Branch Name | โมดูลที่รับผิดชอบ | ผู้รับผิดชอบ |
-| :---: | :--- | :--- | :--- |
-| **Task 1** | `task-1/core-ring` | `src/hash_ring.py`, `src/mod_n_system.py` | คนที่ 1 |
-| **Task 2** | `task-2/guest-index` | `src/guest.py`, `src/indexing.py` | คนที่ 2 |
-| **Task 3** | `task-3/migration-engine` | `src/hotel_node.py`, `src/hotel_system.py` | คนที่ 3 |
-| **Task 4** | `task-4/experiments-cli` | `src/experiments.py`, `src/export.py`, `src/cli.py` | คนที่ 4 |
+| Task | Branch Name | โมดูลที่รับผิดชอบ | รหัสนักศึกษา | ชื่อ - นามสกุล |
+| :---: | :--- | :--- | :---: | :--- |
+| **Task 1** | `task-1/core-ring` | `src/hash_ring.py`, `src/mod_n_system.py` | `68011859` | นาย เฮ้า เจิง |
+| **Task 2** | `task-2/guest-index` | `src/guest.py`, `src/indexing.py` | `68011611` | นาย ก้องกิดากร รัตนกูล |
+| **Task 3** | `task-3/migration-engine` | `src/hotel_node.py`, `src/hotel_system.py` | `68011738` | นาย ปภังกร จึงอนุวัตร |
+| **Task 4** | `task-4/experiments-cli` | `src/experiments.py`, `src/export.py`, `src/cli.py`, `src/handlers/` | `68011803` | นาย วสุธา เทียนเงิน |
 
 > ⚠️ **กฎสำคัญ:** ห้าม push โค้ดลง branch `main` โดยตรงเด็ดขาด! ระบบจะปฏิเสธการ push ทันที ทุกคนต้องพัฒนาโค้ดบน branch ของตนเอง แล้วส่งเข้ามาทาง **Pull Request (PR)** เท่านั้น
 
