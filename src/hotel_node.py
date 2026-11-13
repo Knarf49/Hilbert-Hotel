@@ -1,5 +1,5 @@
-import math
 from dataclasses import dataclass
+
 
 @dataclass
 class MigrationRecord:
@@ -10,7 +10,12 @@ class MigrationRecord:
     room_no: int
 
     def __repr__(self) -> str:
-        return f"MigrationRecord(Guest=({self.channel_id}, {self.sequence_id}), Move: '{self.old_node}' -> '{self.new_node}', Room: {self.room_no})"
+        return (
+            f"MigrationRecord(Guest=({self.channel_id}, {self.sequence_id}), "
+            f"Move: '{self.old_node}' -> '{self.new_node}', Room: {self.room_no})"
+        )
+
+
 class HotelNode:
     def __init__(self, node_id):
         self.node_id = node_id

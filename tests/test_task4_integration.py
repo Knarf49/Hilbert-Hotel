@@ -34,16 +34,16 @@ class TestTask4IntegrationAndExport:
             {"channel_id": 1, "sequence_id": 1, "old_node": "Node_0", "new_node": "Node_1", "room_no": 1}
         ]
         out_file = tmp_path / "migrations.csv"
-        with open(out_file, mode="w", newline="", encoding="utf-8") as f:
-            writer = csv.DictWriter(f, fieldnames=["channel_id", "sequence_id", "old_node", "new_node", "room_no"])
-            writer.writeheader()
-            writer.writerows(records)
+        CSVExporter.export_migrations(str(out_file), records)
 
         with open(out_file, encoding="utf-8") as f:
             reader = list(csv.DictReader(f))
             assert len(reader) == 1
             assert reader[0]["old_node"] == "Node_0"
             assert reader[0]["new_node"] == "Node_1"
+            assert reader[0]["channel_id"] == "1"
+            assert reader[0]["sequence_id"] == "1"
+            assert reader[0]["room_no"] == "1"
 
     def test_t4_4_uniform_experiment_guest_generator(self):
         """T4.4: 10 channels uniform guest batch generator."""
@@ -55,3 +55,25 @@ class TestTask4IntegrationAndExport:
         assert len(channels) == 10, "Must distribute across 10 channels"
         assert min(channels) == 1
         assert max(channels) == 10
+
+    def test_t4_5_experiment_runner_smoke(self):
+        """T4.5: ExperimentRunner smoke tests across experiments A, B, and C."""
+        runner = ExperimentRunner()
+        res_a = runner.run_experiment_a([100])
+        assert 100 in res_a
+        assert "assignment_time_median" in res_a[100]
+        assert "current_mem_mib_median" in res_a[100]
+        assert res_a[100]["assignment_time_median"] > 0
+        assert res_a[100]["current_mem_mib_median"] > 0
+
+        res_b = runner.run_experiment_b([5], k=100, v=8)
+        assert 5 in res_b
+        assert "ch_add_rate_median" in res_b[5]
+        assert res_b[5]["ch_add_rate_median"] > 0
+
+        res_c = runner.run_experiment_c([1, 8], n=5, k=100)
+        assert 1 in res_c
+        assert 8 in res_c
+        assert "cv_median" in res_c[1]
+        assert "cv_median" in res_c[8]
+        assert res_c[8]["cv_median"] > 0

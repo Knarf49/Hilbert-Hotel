@@ -33,7 +33,6 @@ class TestTask2GuestEntityAndIndex:
         g2 = Guest(1, 2)
         assert g1.room_no == 1
         assert g2.room_no == 3
-        # Creating g3 does not shift g1 or g2
         g3 = Guest(2, 1)
         assert g1.room_no == 1
         assert g2.room_no == 3
@@ -49,38 +48,40 @@ class TestTask2GuestEntityAndIndex:
         """T2.4: Bidirectional lookups (c, s) <-> (node, room) return consistent records."""
         manager = GuestIndexManager()
         g1 = Guest(1, 1)
-        manager.guest_to_location[(1, 1)] = ("Node_A", g1.room_no, g1)
-        manager.location_to_guest[("Node_A", g1.room_no)] = (1, 1)
+        assert manager.add_guest(g1, "Node_A") is True
 
-        # Forward lookup
         res_forward = manager.search_by_guest(1, 1)
         assert res_forward == ("Node_A", g1.room_no)
 
-        # Reverse lookup
         res_reverse = manager.search_by_room("Node_A", g1.room_no)
         assert res_reverse == (1, 1)
 
     def test_t2_5_atomic_batch_validation_and_rollback(self):
         """T2.5: Batch addition with duplicate guest rejects entire batch atomically."""
         manager = GuestIndexManager()
-        # Pre-populate guest (1, 3)
         g_existing = Guest(1, 3)
-        manager.guest_to_location[(1, 3)] = ("Node_A", g_existing.room_no, g_existing)
+        assert manager.add_guest(g_existing, "Node_A") is True
 
-        # Attempt to batch validate channel 1, s_start=1, count=5 (contains duplicate s=3)
         batch = manager.validate_batch(channel_id=1, s_start=1, count=5)
         assert batch is None, "Batch containing existing guest must return None (atomically rejected)"
-        # Confirm no partial entries leaked
         assert (1, 1) not in manager.guest_to_location
         assert (1, 2) not in manager.guest_to_location
+
+        assert manager.validate_batch(channel_id=1, s_start=1, count=0) == []
+        assert manager.validate_batch(channel_id=1, s_start=1, count=-1) is None
+        assert manager.validate_batch(channel_id=0, s_start=1, count=5) is None
+        with pytest.raises(ValueError):
+            Guest(True, 1)
+        with pytest.raises(ValueError):
+            Guest.compute_room_no(0, 1)
 
     def test_t2_6_edge_case_duplicate_guest_rejection(self):
         """T2.6: Individual duplicate guest addition rejection."""
         manager = GuestIndexManager()
         g1 = Guest(2, 1)
-        manager.guest_to_location[(2, 1)] = ("Node_A", g1.room_no, g1)
-
-        # Duplicate check should be detectable
+        assert manager.add_guest(g1, "Node_A") is True
+        assert manager.add_guest(g1, "Node_A") is False
+        assert manager.add_guest(Guest(2, 1), "Node_B") is False
         assert (2, 1) in manager.guest_to_location
 
     def test_t2_7_edge_case_non_existent_search(self):
@@ -92,19 +93,18 @@ class TestTask2GuestEntityAndIndex:
     def test_t2_8_edge_case_remove_non_existent_guest(self):
         """T2.8: Removing non-existent guest does not cause KeyError or change counts."""
         manager = GuestIndexManager()
-        # Verify checking for key presence avoids crash
+        assert manager.remove_guest(99, 99) is None
         assert (99, 99) not in manager.guest_to_location
+        assert manager.total_guests() == 0
 
     def test_t2_9_clean_guest_removal(self):
         """T2.9: Removing a guest cleans both index directions completely."""
         manager = GuestIndexManager()
         g = Guest(1, 1)
-        manager.guest_to_location[(1, 1)] = ("Node_A", g.room_no, g)
-        manager.location_to_guest[("Node_A", g.room_no)] = (1, 1)
+        assert manager.add_guest(g, "Node_A") is True
 
-        # Clean removal
-        del manager.guest_to_location[(1, 1)]
-        del manager.location_to_guest[("Node_A", g.room_no)]
-
+        removed = manager.remove_guest(1, 1)
+        assert removed is not None
         assert manager.search_by_guest(1, 1) is None
         assert manager.search_by_room("Node_A", g.room_no) is None
+        assert manager.total_guests() == 0
