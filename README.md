@@ -22,6 +22,8 @@
 
 ## ⚙️ การตั้งค่าสภาพแวดล้อมด้วย `uv` (Recommended)
 
+> 📋 **ข้อกำหนดเวอร์ชัน Python:** โปรเจกต์ต้องการ **`Python 3.11+`** (กำหนดค่าเริ่มต้นไว้ในไฟล์ [`.python-version`](.python-version) และรองรับตาม `pyproject.toml`)
+
 โปรเจกต์นี้แนะนำให้จัดการสภาพแวดล้อมด้วย [**`uv`**](https://docs.astral.sh/uv/) ซึ่งเป็น Python package & project manager ที่ทำงานเร็วมาก และสามารถดึง Python เวอร์ชันตรงตาม [`.python-version`](.python-version) ให้อัตโนมัติ:
 
 ### ขั้นที่ 1: ติดตั้ง `uv` (หากยังไม่มีในเครื่อง)
@@ -84,6 +86,32 @@ pip install -r requirements.txt
 
 ---
 
+## 💻 การรันโปรแกรมและการทดลอง (Execution & Benchmarks)
+
+### 1. Interactive CLI
+เปิดใช้งานเมนูระบบจำลองโรงแรมอนันต์แบบ Interactive:
+```bash
+uv run python -m src.cli
+```
+
+### 2. Automated Benchmarks & Export (CSVs & Graphs)
+รันการทดลองอัตโนมัติ (Experiments A, B, C) คำนวณค่าทางสถิติ บันทึกผลลัพธ์เป็นไฟล์ CSV และพล็อตกราฟสรุปผล:
+```bash
+uv run python -m src.experiments
+```
+
+ผลลัพธ์ทั้งหมดจะถูกสร้างและบันทึกไว้ในโฟลเดอร์ `output/`:
+- `output/experiment_a.csv` — ผลการทดลองขนาดข้อมูล (Data Size vs Execution Time & Memory)
+- `output/experiment_b.csv` — ผลการทดลองเปรียบเทียบ Consistent Hashing vs Hash Mod N
+- `output/experiment_c.csv` — ผลการทดลองปรับแต่ง Virtual Nodes ต่อค่าความแปรปรวน ($CV$)
+- `output/guests.csv` — ตารางข้อมูลแขกและเลขห้องพักที่คำนวณด้วย Cantor Pairing
+- `output/migrations.csv` — บันทึกประวัติและอัตราการโยกย้ายตึกของแขก
+- `output/graph_a.png` — กราฟความสัมพันธ์ระหว่างขนาดข้อมูล $K$ กับเวลาการทำงาน
+- `output/graph_b.png` — กราฟเปรียบเทียบอัตราการย้ายแขก (Migration Rate)
+- `output/graph_c.png` — กราฟผลกระทบของ Virtual Nodes ต่อ $CV$ และการใช้หน่วยความจำ
+
+---
+
 ## 🧪 1. กลไกการทดสอบโค้ดในเครื่อง (Local Testing)
 
 ก่อนจะส่งโค้ดขึ้น GitHub ทุกครั้ง ให้รันชุดทดสอบในเครื่องตัวเองเพื่อความมั่นใจและประหยัดเวลา:
@@ -106,8 +134,9 @@ uv run pytest tests/test_task4_integration.py -v
 
 ### คำสั่งรันเทสต์ทั้งหมดในโปรเจกต์:
 ```bash
-pytest tests/ -v
+uv run pytest -v
 ```
+*(สามารถใช้คำสั่ง `pytest -v` ได้เช่นกันหากอยู่ใน virtual environment ที่ activate แล้ว)*  
 *(ระบบถูกออกแบบให้ Skip โมดูลของเพื่อนที่ยังไม่ถูกรวมเข้ามาโดยอัตโนมัติ ทำให้เทสต์เฉพาะส่วนของคุณได้อย่างราบรื่น)*
 
 ---

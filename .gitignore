@@ -13,6 +13,8 @@ env/
 .coverage
 htmlcov/
 
-# Output & artifacts
-output/
-*.png
+# Microsoft Office temporary and lock files
+~$*
+~*.tmp
+*.tmp
+
